@@ -1,0 +1,152 @@
+---
+
+#Install Elastic Stack
+- name: Ensure required GPG keys are added (Ubuntu)
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Ensure required repositories and keys are added (Ubuntu)
+  apt_repository:
+    repo: "deb https://artifacts.elastic.co/packages/8.x/apt stable main"
+    state: present
+    filename: elasticsearch
+  when: ansible_os_family == "Debian"
+
+- name: Update apt cache (Ubuntu)
+  apt:
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+
+#Install ElasticSearch
+- name: Install Elasticsearch
+  package:
+    name: elasticsearch
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Configure Elasticsearch
+  lineinfile:
+    path: /etc/elasticsearch/elasticsearch.yml
+    regexp: "^#?(network.host:)"
+    line: "network.host: localhost"
+  notify: restart elasticsearch
+
+- name: Ensure Elasticsearch is started and enabled
+  service:
+    name: elasticsearch
+    state: started
+    enabled: yes
+  notify: restart elasticsearch
+
+#Install Kibana
+- name: Install Kibana
+  package:
+    name: kibana
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Configure Kibana
+  lineinfile:
+    path: /etc/kibana/kibana.yml
+    regexp: "^#?(server.host:)"
+    line: "server.host: \"localhost\""
+
+- name: Ensure Kibana is started and enabled
+  service:
+    name: kibana
+    state: started
+    enabled: yes
+  notify: restart kibana
+
+#Install Logstash
+- name: Install Logstash
+  package:
+    name: logstash
+    state: present
+
+- name: Configure Logstash
+  copy:
+    src: ~/Activity-10/logstash.conf
+    dest: /etc/logstash/conf.d/logstash.conf
+
+- name: Start and enable Logstash
+  service:
+    name: logstash
+    state: started
+    enabled: yes
+  notify: restart logstash
+
+#Install Nagios on this server only(Ubuntu)
+- name: Install Nagios (server1_ubuntu)
+  tags: nagios, server1
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nagios4
+    - nagios-plugins
+    - nagios4-core
+    - apache2
+  when: ansible_os_family == "Debian"
+
+#Install InfluxDB
+- name: Install InfluxDB on Ubuntu
+  apt:
+    name: influxdb
+    state: latest
+  when: ansible_os_family == "Debian"
+
+#Install Grafana
+- name: Add Grafana GPG Key for Ubuntu
+  apt_key:
+    url: https://packages.grafana.com/gpg.key
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Add Grafana APT repository for Ubuntu
+  apt_repository:
+    repo: "deb 	https://apt.grafana.com stable main"
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Install Grafana on Ubuntu
+  apt:
+    name: grafana
+    state: latest
+  when: ansible_os_family == "Debian"
+
+#Install Prometheus
+- name: Install Prometheus on Ubuntu
+  apt:
+    name: prometheus
+    state: latest
+  when: ansible_os_family == "Debian"
+
+#Install Lamp Stack (apache/httpd, php, and MariaDB)
+- name: Install Apache, PHP, and MariaDB on Ubuntu
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - apache2
+    - php
+    - php-mysql
+    - mariadb-server
+  when: ansible_os_family == "Debian"
+
+#Start and Enabling Lamp Stack
+- name: Start and enable Apache on Ubuntu
+  service:
+    name: apache2
+    state: started
+    enabled: yes
+  when: ansible_os_family == "Debian"
+
+- name: Start and enable MariaDB on Ubuntu
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+  when: ansible_os_family == "Debian"

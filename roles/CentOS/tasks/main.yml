@@ -1,0 +1,115 @@
+---
+
+#Install Elastic Stack
+- name: Ensure required repositories and keys are added (CentOS)
+  yum_repository:
+    name: logstash
+    description: "Logstash repository"
+    baseurl: "https://artifacts.elastic.co/packages/8.x/yum"
+    gpgcheck: yes
+    gpgkey: "https://artifacts.elastic.co/GPG-KEY-elasticsearch"
+    enabled: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Update package cache (CentOS)
+  yum:
+    name: "*"
+    state: latest
+  when: ansible_os_family == "RedHat"
+#install Logstash
+- name: Install Logstash
+  package:
+    name: logstash
+    state: present
+
+- name: Configure Logstash
+  copy:
+    src: ~/Activity-10/logstash.conf
+    dest: /etc/logstash/conf.d/logstash.conf
+
+- name: Start and enable Logstash
+  service:
+    name: logstash
+    state: started
+    enabled: yes
+  notify: restart logstash
+
+#Install EPEL release
+- name: Install EPEL release (CentOS)
+  yum:
+    name: epel-release
+    state: present
+  when: ansible_os_family == "RedHat"
+
+#Install InfluxDB
+- name: Install InfluxDB on CentOS
+  yum:
+    name: influxdb
+    state: latest
+  when: ansible_os_family == "RedHat"
+
+#Install Grafana
+- name: Install Grafana on CentOS
+  yum:
+    name: grafana
+    state: latest
+  when: ansible_os_family == "RedHat"
+
+#Install Prometheus
+- name: Install Prometheus on CentOS
+  yum:
+    name: prometheus
+    state: latest
+  when: ansible_os_family == "RedHat"
+
+#Starting and Enabling InfluxDB, Grafana, Prometheus
+- name: Start and enable InfluxDB
+  service:
+    name: influxdb
+    state: started
+    enabled: yes
+
+- name: Start and enable Grafana
+  service:
+    name: grafana-server
+    state: started
+    enabled: yes
+
+- name: Start and enable Prometheus
+  service:
+    name: prometheus
+    state: started
+    enabled: yes
+
+#Install Lamp Stack (apache/httpd, php, and MariaDB)
+- name: Install Apache, PHP, and MariaDB on CentOS
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - httpd
+    - php
+    - php-mysqlnd
+    - mariadb-server
+  when: ansible_os_family == "RedHat"
+
+#Starting and Enabling Lamp Stack
+- name: Start and enable Apache on CentOS
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Start and enable MariaDB on CentOS
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+  when: ansible_os_family == "RedHat"
+
+- name: Ensure php is installed (CentOS)
+  yum:
+    name: php
+    state: present
+  when: ansible_os_family == "RedHat"
